@@ -24,7 +24,6 @@ class RecognitionProvider extends ChangeNotifier {
 
   void setLanguage(RecognitionLanguage lang) {
     _language = lang;
-    // If we already have a result, reset it so user re-recognizes with new lang
     if (_state == RecognitionState.done) {
       _state = RecognitionState.idle;
       _recognizedText = '';
@@ -32,15 +31,23 @@ class RecognitionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// IMPORTANT NOTE ABOUT RUSSIAN (CYRILLIC):
+  /// The google_mlkit_text_recognition Dart package only exposes:
+  ///   TextRecognitionScript.latin
+  ///   TextRecognitionScript.chinese
+  ///   TextRecognitionScript.devanagari
+  ///   TextRecognitionScript.japanese
+  ///   TextRecognitionScript.korean
+  ///
+  /// There is NO TextRecognitionScript.cyrillic in the Dart API.
+  /// For Russian text, the native Cyrillic model must be added in
+  /// build.gradle.kts (already done), but on the Dart side we still
+  /// use TextRecognitionScript.latin — the native layer handles Cyrillic
+  /// characters automatically when the native model is present.
   TextRecognizer _buildRecognizer() {
-    switch (_language) {
-      case RecognitionLanguage.russian:
-        return TextRecognizer(script: TextRecognitionScript.cyrillic);
-      case RecognitionLanguage.english:
-      case RecognitionLanguage.turkish:
-      case RecognitionLanguage.turkmen:
-        return TextRecognizer(script: TextRecognitionScript.latin);
-    }
+    // All languages use latin script on Dart side.
+    // Cyrillic recognition works via native model in build.gradle.kts
+    return TextRecognizer(script: TextRecognitionScript.latin);
   }
 
   Future<void> pickImage(ImageSource source) async {
