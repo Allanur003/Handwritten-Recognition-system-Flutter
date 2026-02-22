@@ -5,12 +5,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/localization/app_localizations.dart';
-import 'recognition_provider.dart';
-import 'widgets/language_selector_widget.dart';
-import 'widgets/image_area_widget.dart';
-import 'widgets/result_card_widget.dart';
-import '../history/history_provider.dart';
+import 'package:handwritten_recognition/core/localization/app_localizations.dart';
+import 'package:handwritten_recognition/features/recognition/recognition_provider.dart';
+import 'package:handwritten_recognition/features/recognition/widgets/language_selector_widget.dart';
+import 'package:handwritten_recognition/features/recognition/widgets/image_area_widget.dart';
+import 'package:handwritten_recognition/features/recognition/widgets/result_card_widget.dart';
+import 'package:handwritten_recognition/features/history/history_provider.dart';
 
 class RecognitionScreen extends StatelessWidget {
   const RecognitionScreen({super.key});
@@ -46,15 +46,10 @@ class RecognitionScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Language selector
             const LanguageSelectorWidget(),
             const SizedBox(height: 16),
-
-            // Image area
             const ImageAreaWidget(),
             const SizedBox(height: 16),
-
-            // Pick / Camera buttons
             Row(
               children: [
                 Expanded(
@@ -79,8 +74,6 @@ class RecognitionScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Recognize button — only show if image selected
             if (provider.selectedImage != null) ...[
               FilledButton.icon(
                 style: FilledButton.styleFrom(
@@ -92,9 +85,9 @@ class RecognitionScreen extends StatelessWidget {
                     ? null
                     : () async {
                         await provider.recognizeText();
-                        // Save to history if success
                         if (provider.state == RecognitionState.done &&
                             provider.recognizedText.isNotEmpty) {
+                          // ignore: use_build_context_synchronously
                           context.read<HistoryProvider>().addEntry(
                                 provider.recognizedText,
                                 provider.language.name,
@@ -124,10 +117,7 @@ class RecognitionScreen extends StatelessWidget {
                 label: Text(loc.get('reset')),
               ),
             ],
-
             const SizedBox(height: 8),
-
-            // Result
             if (provider.state == RecognitionState.done)
               ResultCardWidget(
                 text: provider.recognizedText,
@@ -144,8 +134,6 @@ class RecognitionScreen extends StatelessWidget {
                 },
                 onShare: () => Share.share(provider.recognizedText),
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
-
-            // Error
             if (provider.state == RecognitionState.error)
               Card(
                 color: theme.colorScheme.errorContainer,
@@ -158,10 +146,7 @@ class RecognitionScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
             const SizedBox(height: 24),
-
-            // Tips card
             _TipsCard(),
           ],
         ),
@@ -208,9 +193,7 @@ class _TipsCard extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: theme.colorScheme.secondary),
           const SizedBox(width: 8),
-          Expanded(
-              child:
-                  Text(text, style: theme.textTheme.bodySmall)),
+          Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
         ],
       ),
     );

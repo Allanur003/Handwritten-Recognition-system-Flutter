@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/localization/app_localizations.dart';
-import '../../core/theme/theme_provider.dart';
+import 'package:handwritten_recognition/core/localization/app_localizations.dart';
+import 'package:handwritten_recognition/core/theme/theme_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -28,7 +28,6 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Appearance section
           _SectionHeader(title: 'Appearance'),
           Card(
             child: SwitchListTile(
@@ -44,8 +43,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Language section
           _SectionHeader(title: loc.get('appLanguage')),
           Card(
             child: Column(
@@ -67,8 +64,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // About
           _SectionHeader(title: 'About'),
           Card(
             child: Padding(
@@ -78,8 +73,7 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          color: theme.colorScheme.primary),
+                      Icon(Icons.info_outline, color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
                         'Handwriting Recognition',
@@ -93,8 +87,7 @@ class SettingsScreen extends StatelessWidget {
                     'Powered by Google ML Kit (on-device, offline)\n'
                     'Supports: English, Turkish, Russian, Turkmen\n'
                     'Version: 1.0.0',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(height: 1.6),
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
                   ),
                 ],
               ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/localization/app_localizations.dart';
-import '../recognition_provider.dart';
+import 'package:handwritten_recognition/core/localization/app_localizations.dart';
+import 'package:handwritten_recognition/features/recognition/recognition_provider.dart';
 
 class LanguageSelectorWidget extends StatelessWidget {
   const LanguageSelectorWidget({super.key});

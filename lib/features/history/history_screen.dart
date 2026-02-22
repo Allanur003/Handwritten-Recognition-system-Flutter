@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/localization/app_localizations.dart';
-import 'history_provider.dart';
+import 'package:handwritten_recognition/core/localization/app_localizations.dart';
+import 'package:handwritten_recognition/features/history/history_provider.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});

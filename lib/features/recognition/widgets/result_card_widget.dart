@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/localization/app_localizations.dart';
+import 'package:handwritten_recognition/core/localization/app_localizations.dart';
 
 class ResultCardWidget extends StatelessWidget {
   final String text;
@@ -26,7 +26,6 @@ class ResultCardWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
               children: [
                 Icon(Icons.text_fields_rounded,
@@ -56,8 +55,6 @@ class ResultCardWidget extends StatelessWidget {
             ),
             const Divider(),
             const SizedBox(height: 4),
-
-            // Selectable text (user can highlight & copy manually too)
             if (hasText)
               SelectableText(
                 text,
@@ -75,8 +72,7 @@ class ResultCardWidget extends StatelessWidget {
                       Text(
                         loc.get('noText'),
                         textAlign: TextAlign.center,
-                        style:
-                            TextStyle(color: theme.colorScheme.outline),
+                        style: TextStyle(color: theme.colorScheme.outline),
                       ),
                     ],
                   ),
