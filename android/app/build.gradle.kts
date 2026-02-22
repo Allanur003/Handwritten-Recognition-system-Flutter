@@ -42,7 +42,7 @@ flutter {
 dependencies {
     // Latin script: EN, TR, TK
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    // Cyrillic script: RU — ayrı paket olarak eklenmeli
-    implementation("com.google.mlkit:text-recognition-cyrillic:16.0.1")
+
 }
+
 
