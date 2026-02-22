@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.handwritten_recognition"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
 
     // FIX: NDK version required by path_provider, permission_handler, share_plus
     ndkVersion = "27.0.12077973"
@@ -45,3 +45,4 @@ dependencies {
     // Cyrillic script: RU — ayrı paket olarak eklenmeli
     implementation("com.google.mlkit:text-recognition-cyrillic:16.0.1")
 }
+
