@@ -1,5 +1,5 @@
 name: handwritten_recognition
-description: Handwritten Pattern Recognition System
+description: Handwritten Pattern Recognition System with Gemini Vision
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,12 +9,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_mlkit_text_recognition: ^0.13.0
+  
+  # Gemini API - ML Kit yerine
+  google_generative_ai: ^0.4.6
+  
+  # Resim seçme
   image_picker: ^1.1.2
+  
+  # State management
   provider: ^6.1.2
+  
+  # Animasyon
   flutter_animate: ^4.5.0
+  
+  # Paylaşma
   share_plus: ^10.0.2
+  
+  # İzinler
   permission_handler: ^11.3.1
+  
+  # Localization
   flutter_localizations:
     sdk: flutter
   intl: ^0.19.0

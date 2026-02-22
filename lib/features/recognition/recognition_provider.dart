@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
 
-enum RecognitionLanguage { english, turkish, russian, turkmen }
+enum RecognitionLanguage { english, russian, turkmen }
 
 enum RecognitionState { idle, processing, done, error }
 
@@ -13,14 +14,22 @@ class RecognitionProvider extends ChangeNotifier {
   File? _selectedImage;
   String _recognizedText = '';
   String _errorMessage = '';
+  String _apiKey = '';
 
   RecognitionState get state => _state;
   RecognitionLanguage get language => _language;
   File? get selectedImage => _selectedImage;
   String get recognizedText => _recognizedText;
   String get errorMessage => _errorMessage;
+  String get apiKey => _apiKey;
+  bool get hasApiKey => _apiKey.trim().isNotEmpty;
 
   final ImagePicker _picker = ImagePicker();
+
+  void setApiKey(String key) {
+    _apiKey = key.trim();
+    notifyListeners();
+  }
 
   void setLanguage(RecognitionLanguage lang) {
     _language = lang;
@@ -31,23 +40,25 @@ class RecognitionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// IMPORTANT NOTE ABOUT RUSSIAN (CYRILLIC):
-  /// The google_mlkit_text_recognition Dart package only exposes:
-  ///   TextRecognitionScript.latin
-  ///   TextRecognitionScript.chinese
-  ///   TextRecognitionScript.devanagari
-  ///   TextRecognitionScript.japanese
-  ///   TextRecognitionScript.korean
-  ///
-  /// There is NO TextRecognitionScript.cyrillic in the Dart API.
-  /// For Russian text, the native Cyrillic model must be added in
-  /// build.gradle.kts (already done), but on the Dart side we still
-  /// use TextRecognitionScript.latin — the native layer handles Cyrillic
-  /// characters automatically when the native model is present.
-  TextRecognizer _buildRecognizer() {
-    // All languages use latin script on Dart side.
-    // Cyrillic recognition works via native model in build.gradle.kts
-    return TextRecognizer(script: TextRecognitionScript.latin);
+  String _buildPrompt() {
+    final langName = switch (_language) {
+      RecognitionLanguage.english => 'English',
+      RecognitionLanguage.russian => 'Russian',
+      RecognitionLanguage.turkmen => 'Turkmen',
+    };
+
+    return '''You are an expert handwriting recognition AI.
+Your task: Extract ALL handwritten text from this image exactly as written.
+
+Rules:
+1. Output ONLY the recognized text — no explanations, no comments.
+2. Preserve line breaks as they appear in the image.
+3. The text is written in $langName. Use this to resolve ambiguous characters.
+4. Include numbers, punctuation, and special characters as-is.
+5. If you cannot read a word clearly, make your best guess based on context.
+6. If there is NO text in the image, output only: [no text found]
+
+Output the recognized text now:''';
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -74,35 +85,65 @@ class RecognitionProvider extends ChangeNotifier {
 
   Future<void> recognizeText() async {
     if (_selectedImage == null) return;
+    if (!hasApiKey) {
+      _errorMessage = 'API_KEY_MISSING';
+      _state = RecognitionState.error;
+      notifyListeners();
+      return;
+    }
 
     _state = RecognitionState.processing;
     _recognizedText = '';
     notifyListeners();
 
-    final recognizer = _buildRecognizer();
     try {
-      final inputImage = InputImage.fromFile(_selectedImage!);
-      final RecognizedText result = await recognizer.processImage(inputImage);
+      final model = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: _apiKey,
+      );
 
-      // Sort blocks top-to-bottom for natural reading order
-      final blocks = result.blocks.toList()
-        ..sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
+      // Read image bytes
+      final imageBytes = await _selectedImage!.readAsBytes();
+      final mimeType = _getMimeType(_selectedImage!.path);
 
-      _recognizedText = blocks
-          .map((block) => block.lines
-              .map((line) => line.elements.map((e) => e.text).join(' '))
-              .join('\n'))
-          .join('\n\n')
-          .trim();
+      final prompt = _buildPrompt();
+
+      final response = await model.generateContent([
+        Content.multi([
+          DataPart(mimeType, imageBytes),
+          TextPart(prompt),
+        ])
+      ]);
+
+      final text = response.text ?? '';
+
+      if (text.trim().isEmpty || text.contains('[no text found]')) {
+        _recognizedText = '';
+      } else {
+        _recognizedText = text.trim();
+      }
 
       _state = RecognitionState.done;
-    } catch (e) {
-      _errorMessage = 'Recognition error: $e';
+    } on GenerativeAIException catch (e) {
+      _errorMessage = 'Gemini error: ${e.message}';
       _state = RecognitionState.error;
-    } finally {
-      await recognizer.close();
+    } catch (e) {
+      _errorMessage = 'Error: $e';
+      _state = RecognitionState.error;
     }
+
     notifyListeners();
+  }
+
+  String _getMimeType(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    return switch (ext) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      _ => 'image/jpeg',
+    };
   }
 
   void reset() {

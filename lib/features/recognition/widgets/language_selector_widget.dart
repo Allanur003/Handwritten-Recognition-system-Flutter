@@ -13,9 +13,9 @@ class LanguageSelectorWidget extends StatelessWidget {
     final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
+    // Only 3 languages: EN, RU, TK
     final langs = [
       (RecognitionLanguage.english, '🇬🇧', loc.get('english')),
-      (RecognitionLanguage.turkish, '🇹🇷', loc.get('turkish')),
       (RecognitionLanguage.russian, '🇷🇺', loc.get('russian')),
       (RecognitionLanguage.turkmen, '🇹🇲', loc.get('turkmen')),
     ];
@@ -32,18 +32,21 @@ class LanguageSelectorWidget extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: langs.map((item) {
                 final (lang, flag, label) = item;
                 final isSelected = provider.language == lang;
-                return ChoiceChip(
-                  avatar: Text(flag, style: const TextStyle(fontSize: 16)),
-                  label: Text(label),
-                  selected: isSelected,
-                  onSelected: (_) => provider.setLanguage(lang),
-                  selectedColor: theme.colorScheme.primaryContainer,
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      avatar: Text(flag, style: const TextStyle(fontSize: 16)),
+                      label: Text(label, style: const TextStyle(fontSize: 12)),
+                      selected: isSelected,
+                      onSelected: (_) => provider.setLanguage(lang),
+                      selectedColor: theme.colorScheme.primaryContainer,
+                    ),
+                  ),
                 );
               }).toList(),
             ),

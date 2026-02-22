@@ -3,21 +3,44 @@ import 'package:provider/provider.dart';
 
 import 'package:handwritten_recognition/core/localization/app_localizations.dart';
 import 'package:handwritten_recognition/core/theme/theme_provider.dart';
+import 'package:handwritten_recognition/features/recognition/recognition_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  late TextEditingController _apiController;
+  bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = context.read<RecognitionProvider>();
+    _apiController = TextEditingController(text: provider.apiKey);
+  }
+
+  @override
+  void dispose() {
+    _apiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final themeProvider = context.watch<ThemeProvider>();
     final localeProvider = context.watch<LocaleProvider>();
+    final recProvider = context.watch<RecognitionProvider>();
     final theme = Theme.of(context);
 
     final appLanguages = [
       (const Locale('en'), '🇬🇧 English'),
-      (const Locale('tr'), '🇹🇷 Türkçe'),
       (const Locale('ru'), '🇷🇺 Русский'),
+      (const Locale('tk'), '🇹🇲 Türkmençe'),
     ];
 
     return Scaffold(
@@ -28,6 +51,86 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+
+          // ── Gemini API Key ──────────────────────────────
+          _SectionHeader(title: loc.get('apiKeyTitle')),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 16, color: theme.colorScheme.secondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          loc.get('apiKeyInfo'),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: theme.colorScheme.secondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _apiController,
+                    obscureText: _obscure,
+                    decoration: InputDecoration(
+                      hintText: loc.get('apiKeyHint'),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                            _obscure ? Icons.visibility : Icons.visibility_off),
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                      ),
+                      prefixIcon: const Icon(Icons.key),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        context
+                            .read<RecognitionProvider>()
+                            .setApiKey(_apiController.text);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✅ API Key saved!'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.save),
+                      label: Text(loc.get('apiKeySave')),
+                    ),
+                  ),
+                  if (recProvider.hasApiKey)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: Colors.green, size: 16),
+                          const SizedBox(width: 6),
+                          Text('API Key is set ✓',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Appearance ──────────────────────────────────
           _SectionHeader(title: 'Appearance'),
           Card(
             child: SwitchListTile(
@@ -43,6 +146,8 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // ── App Language ────────────────────────────────
           _SectionHeader(title: loc.get('appLanguage')),
           Card(
             child: Column(
@@ -64,6 +169,8 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+
+          // ── About ───────────────────────────────────────
           _SectionHeader(title: 'About'),
           Card(
             child: Padding(
@@ -73,20 +180,18 @@ class SettingsScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                      Icon(Icons.auto_awesome,
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
-                      Text(
-                        'Handwriting Recognition',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
+                      Text('Handwriting Recognition v1.0',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Powered by Google ML Kit (on-device, offline)\n'
-                    'Supports: English, Turkish, Russian, Turkmen\n'
-                    'Version: 1.0.0',
+                    'Powered by Google Gemini Vision AI\n'
+                    'Supports: English, Russian, Turkmen',
                     style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
                   ),
                 ],
