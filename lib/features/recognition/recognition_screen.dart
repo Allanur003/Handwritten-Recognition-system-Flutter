@@ -204,9 +204,9 @@ class _ErrorCard extends StatelessWidget {
     final displayMsg = switch (message) {
       'API_KEY_MISSING' => loc.get('apiKeyMissing'),
       'all_keys_exhausted' =>
-        '⚠️ İki key\'in de limiti doldu. Yarın tekrar dene.',
-      'invalid_key' => '❌ Geçersiz key. Settings\'ten kontrol et.',
-      'model_not_found' => '❌ Bağlantı hatası. İnterneti kontrol et.',
+        '⚠️ İki key\'in hem limiti doldy. Ertir tazeden synans.',
+      'invalid_key' => '❌ Nadogry key. Settings\'den kontrol et.',
+      'model_not_found' => '❌ Internet nasazlygy. İnternedi barla.',
       _ => message,
     };
     return Card(
