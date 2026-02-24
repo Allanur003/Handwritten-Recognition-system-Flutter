@@ -74,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 6),
                   Text(
                     '💡 In kop 2 key gosup bilersin. '
-                    'Biri dolsa aitomat beylekisine geçer.',
+                    'Biri dolsa automat beylekisine geçer.',
                     style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                         fontStyle: FontStyle.italic),
