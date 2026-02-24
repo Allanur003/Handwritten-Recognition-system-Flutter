@@ -73,8 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '💡 En fazla 2 key ekleyebilirsin. '
-                    'Biri dolunca otomatik diğerine geçer.',
+                    '💡 In kop 2 key gosup bilersin. '
+                    'Biri dolsa aitomat beylekisine geçer.',
                     style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                         fontStyle: FontStyle.italic),
@@ -114,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ?.copyWith(fontFamily: 'monospace'),
                 ),
                 subtitle: Text(
-                  isActive ? '✅ Aktif' : '⏳ Beklemede',
+                  isActive ? '✅ Aktiw' : '⏳ Garasyn',
                   style: TextStyle(
                     color: isActive ? Colors.green : theme.colorScheme.outline,
                     fontWeight:
@@ -142,8 +142,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       recProvider.apiKeys.isEmpty
-                          ? 'API Key Ekle (1/2)'
-                          : 'İkinci API Key Ekle (2/2)',
+                          ? 'API Key Gosh (1/2)'
+                          : 'İkinji API Key gosh (2/2)',
                       style: theme.textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                    '✅ Key ${recProvider.apiKeys.length} kaydedildi!'),
+                                    '✅ Key ${recProvider.apiKeys.length} db edildi!'),
                                 behavior: SnackBarBehavior.floating,
                                 backgroundColor: Colors.green,
                                 duration: const Duration(seconds: 2),
@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.green, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'İki key de eklendi. Günde toplam 40 resim tanıyabilirsin.',
+                      'İki key hem gosuldy. Günde jemi 40 surat tanadyp bilersin.',
                       style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold),
                     ),
@@ -300,12 +300,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Key\'i Sil'),
-        content: const Text('Bu key\'i silmek istiyor musun?'),
+        title: const Text('Key\'i Poz'),
+        content: const Text('Bu key\'i pozmak isleyarmin?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
+            child: const Text('Goybolsun'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -314,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await provider.removeApiKey(index);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Sil'),
+            child: const Text('Poz'),
           ),
         ],
       ),
