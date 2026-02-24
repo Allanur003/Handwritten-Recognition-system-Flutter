@@ -190,7 +190,7 @@ Output the recognized text now:''';
 
   Future<String> _callApi(String apiKey) async {
     final model = GenerativeModel(
-      model: 'gemini-2.5-flash-preview-05-20',
+      model: 'gemini-2.5-flash',
       apiKey: apiKey,
     );
     final imageBytes = await _selectedImage!.readAsBytes();
