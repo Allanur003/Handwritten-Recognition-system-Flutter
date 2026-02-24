@@ -12,12 +12,17 @@ import 'features/history/history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Key'leri başlangıçta yükle
+  final recProvider = RecognitionProvider();
+  await recProvider.loadKeys();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProvider(create: (_) => RecognitionProvider()),
+        ChangeNotifierProvider.value(value: recProvider),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
       ],
       child: const MyApp(),

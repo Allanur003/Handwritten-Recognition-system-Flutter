@@ -30,7 +30,7 @@ class AppLocalizations {
       'share': 'Share',
       'copied': 'Copied!',
       'noText': 'No text found. Try a clearer image.',
-      'processing': 'Analyzing with Gemini...',
+      'processing': 'Analyzing...',
       'history': 'History',
       'settings': 'Settings',
       'darkMode': 'Dark Mode',
@@ -50,8 +50,8 @@ class AppLocalizations {
       'apiKeyHint': 'Enter your Gemini API Key',
       'apiKeySave': 'Save',
       'apiKeyTitle': 'Gemini API Key',
-      'apiKeyInfo': 'Get your free API key from Google AI Studio (aistudio.google.com)',
-      'geminiPowered': 'Powered by Gemini Vision AI',
+      'apiKeyInfo': 'Get your free key from aistudio.google.com',
+      
     },
     'ru': {
       'appTitle': 'Распознавание почерка',
@@ -64,7 +64,7 @@ class AppLocalizations {
       'share': 'Поделиться',
       'copied': 'Скопировано!',
       'noText': 'Текст не найден. Попробуйте более чёткое фото.',
-      'processing': 'Анализ через Gemini...',
+      'processing': 'Анализируется...',
       'history': 'История',
       'settings': 'Настройки',
       'darkMode': 'Тёмная тема',
@@ -84,8 +84,8 @@ class AppLocalizations {
       'apiKeyHint': 'Введите Gemini API ключ',
       'apiKeySave': 'Сохранить',
       'apiKeyTitle': 'Gemini API Ключ',
-      'apiKeyInfo': 'Получите бесплатный ключ на aistudio.google.com',
-      'geminiPowered': 'На базе Gemini Vision AI',
+      'apiKeyInfo': 'Бесплатный ключ: aistudio.google.com',
+      
     },
     'tk': {
       'appTitle': 'El ýazgy tanamak',
@@ -98,7 +98,7 @@ class AppLocalizations {
       'share': 'Paýlaş',
       'copied': 'Göçürildi!',
       'noText': 'Tekst tapylmady. Has aýdyň surat synap görüň.',
-      'processing': 'Gemini arkaly derňelýär...',
+      'processing': 'Derňelýär...',
       'history': 'Taryh',
       'settings': 'Sazlamalar',
       'darkMode': 'Garaňky tertip',
@@ -118,8 +118,8 @@ class AppLocalizations {
       'apiKeyHint': 'Gemini API açaryny giriziň',
       'apiKeySave': 'Sakla',
       'apiKeyTitle': 'Gemini API Açary',
-      'apiKeyInfo': 'Mugt açary aistudio.google.com sahypasyndan alyň',
-      'geminiPowered': 'Gemini Vision AI bilen işleýär',
+      'apiKeyInfo': 'Mugt açar: aistudio.google.com',
+      
     },
   };
 

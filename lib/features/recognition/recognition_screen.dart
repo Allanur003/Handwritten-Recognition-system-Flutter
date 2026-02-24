@@ -42,25 +42,21 @@ class RecognitionScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // API Key warning banner
+            // API key uyarısı
             if (!provider.hasApiKey)
-              _ApiKeyBanner().animate().fadeIn().slideY(begin: -0.2),
+              _ApiKeyBanner(loc: loc).animate().fadeIn().slideY(begin: -0.2),
 
-            // Gemini badge
-            if (provider.hasApiKey)
-              _GeminiBadge(loc: loc),
+            if (!provider.hasApiKey) const SizedBox(height: 12),
 
-            const SizedBox(height: 12),
-
-            // Language selector
+            // Dil seçici
             const LanguageSelectorWidget(),
             const SizedBox(height: 16),
 
-            // Image area
+            // Resim alanı
             const ImageAreaWidget(),
             const SizedBox(height: 16),
 
-            // Pick / Camera buttons
+            // Galeri / Kamera butonları
             Row(
               children: [
                 Expanded(
@@ -86,7 +82,7 @@ class RecognitionScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Recognize button
+            // Tanı butonu
             if (provider.selectedImage != null) ...[
               FilledButton.icon(
                 style: FilledButton.styleFrom(
@@ -114,7 +110,7 @@ class RecognitionScreen extends StatelessWidget {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.auto_awesome),
+                    : const Icon(Icons.document_scanner_outlined),
                 label: Text(
                   provider.state == RecognitionState.processing
                       ? loc.get('processing')
@@ -133,7 +129,7 @@ class RecognitionScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Result
+            // Sonuç
             if (provider.state == RecognitionState.done)
               ResultCardWidget(
                 text: provider.recognizedText,
@@ -149,7 +145,7 @@ class RecognitionScreen extends StatelessWidget {
                 onShare: () => Share.share(provider.recognizedText),
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
 
-            // Error
+            // Hata
             if (provider.state == RecognitionState.error)
               _ErrorCard(message: provider.errorMessage, loc: loc),
 
@@ -162,39 +158,10 @@ class RecognitionScreen extends StatelessWidget {
   }
 }
 
-class _GeminiBadge extends StatelessWidget {
-  final AppLocalizations loc;
-  const _GeminiBadge({required this.loc});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.secondaryContainer,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.auto_awesome, size: 16),
-          const SizedBox(width: 6),
-          Text(loc.get('geminiPowered'),
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-}
-
 class _ApiKeyBanner extends StatelessWidget {
+  final AppLocalizations loc;
+  const _ApiKeyBanner({required this.loc});
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -212,8 +179,9 @@ class _ApiKeyBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                AppLocalizations.of(context).get('apiKeyMissing'),
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                loc.get('apiKeyMissing'),
+                style:
+                    TextStyle(color: theme.colorScheme.onErrorContainer),
               ),
             ),
             Icon(Icons.arrow_forward_ios,
@@ -233,9 +201,14 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final displayMsg = message == 'API_KEY_MISSING'
-        ? loc.get('apiKeyMissing')
-        : message;
+    final displayMsg = switch (message) {
+      'API_KEY_MISSING' => loc.get('apiKeyMissing'),
+      'all_keys_exhausted' =>
+        '⚠️ İki key\'in de limiti doldu. Yarın tekrar dene.',
+      'invalid_key' => '❌ Geçersiz key. Settings\'ten kontrol et.',
+      'model_not_found' => '❌ Bağlantı hatası. İnterneti kontrol et.',
+      _ => message,
+    };
     return Card(
       color: theme.colorScheme.errorContainer,
       child: Padding(
@@ -247,8 +220,8 @@ class _ErrorCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(displayMsg,
-                  style:
-                      TextStyle(color: theme.colorScheme.onErrorContainer)),
+                  style: TextStyle(
+                      color: theme.colorScheme.onErrorContainer)),
             ),
           ],
         ),

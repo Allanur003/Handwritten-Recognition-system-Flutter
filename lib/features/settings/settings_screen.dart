@@ -13,19 +13,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _apiController;
+  final TextEditingController _keyController = TextEditingController();
   bool _obscure = true;
 
   @override
-  void initState() {
-    super.initState();
-    final provider = context.read<RecognitionProvider>();
-    _apiController = TextEditingController(text: provider.apiKey);
-  }
-
-  @override
   void dispose() {
-    _apiController.dispose();
+    _keyController.dispose();
     super.dispose();
   }
 
@@ -52,85 +45,180 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
 
-          // ── Gemini API Key ──────────────────────────────
+          // ── API Keys ─────────────────────────────────────
           _SectionHeader(title: loc.get('apiKeyTitle')),
+
+          // Bilgi kartı
           Card(
+            color: theme.colorScheme.secondaryContainer,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Icon(Icons.info_outline,
-                          size: 16, color: theme.colorScheme.secondary),
+                          size: 16,
+                          color: theme.colorScheme.onSecondaryContainer),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           loc.get('apiKeyInfo'),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.secondary),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSecondaryContainer),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _apiController,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      hintText: loc.get('apiKeyHint'),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                            _obscure ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                      prefixIcon: const Icon(Icons.key),
-                    ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '💡 En fazla 2 key ekleyebilirsin. '
+                    'Biri dolunca otomatik diğerine geçer.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
+                        fontStyle: FontStyle.italic),
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        context
-                            .read<RecognitionProvider>()
-                            .setApiKey(_apiController.text);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('✅ API Key saved!'),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.save),
-                      label: Text(loc.get('apiKeySave')),
-                    ),
-                  ),
-                  if (recProvider.hasApiKey)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle,
-                              color: Colors.green, size: 16),
-                          const SizedBox(width: 6),
-                          Text('API Key is set ✓',
-                              style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Mevcut key'ler
+          ...recProvider.apiKeys.asMap().entries.map((entry) {
+            final index = entry.key;
+            final key = entry.value;
+            final isActive = index == recProvider.currentKeyIndex;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isActive ? Colors.green : theme.colorScheme.surfaceVariant,
+                  radius: 16,
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isActive
+                          ? Colors.white
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  _maskKey(key),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontFamily: 'monospace'),
+                ),
+                subtitle: Text(
+                  isActive ? '✅ Aktif' : '⏳ Beklemede',
+                  style: TextStyle(
+                    color: isActive ? Colors.green : theme.colorScheme.outline,
+                    fontWeight:
+                        isActive ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete_outline,
+                      color: theme.colorScheme.error),
+                  onPressed: () => _confirmDelete(context, recProvider, index),
+                ),
+              ),
+            );
+          }),
+
+          // Yeni key ekleme — sadece 2'den az key varsa göster
+          if (recProvider.canAddMoreKeys) ...[
+            const SizedBox(height: 4),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recProvider.apiKeys.isEmpty
+                          ? 'API Key Ekle (1/2)'
+                          : 'İkinci API Key Ekle (2/2)',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _keyController,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        hintText: loc.get('apiKeyHint'),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.key),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscure
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () =>
+                              setState(() => _obscure = !_obscure),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          final key = _keyController.text.trim();
+                          if (key.isEmpty) return;
+                          await recProvider.addApiKey(key);
+                          _keyController.clear();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    '✅ Key ${recProvider.apiKeys.length} kaydedildi!'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.save),
+                        label: Text(loc.get('apiKeySave')),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            // 2 key doldu mesajı
+            const SizedBox(height: 4),
+            Card(
+              color: theme.colorScheme.tertiaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle,
+                        color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'İki key de eklendi. Günde toplam 40 resim tanıyabilirsin.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
 
-          // ── Appearance ──────────────────────────────────
+          // ── Appearance ───────────────────────────────────
           _SectionHeader(title: 'Appearance'),
           Card(
             child: SwitchListTile(
@@ -147,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ── App Language ────────────────────────────────
+          // ── App Language ─────────────────────────────────
           _SectionHeader(title: loc.get('appLanguage')),
           Card(
             child: Column(
@@ -170,29 +258,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
 
-          // ── About ───────────────────────────────────────
+          // ── About ────────────────────────────────────────
           _SectionHeader(title: 'About'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.auto_awesome,
-                          color: theme.colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text('Handwriting Recognition v1.0',
+                  Icon(Icons.document_scanner,
+                      color: theme.colorScheme.primary, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Handwriting Recognition v1.0',
                           style: theme.textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Powered by Google Gemini Vision AI\n'
-                    'Supports: English, Russian, Turkmen',
-                    style: theme.textTheme.bodySmall?.copyWith(height: 1.6),
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'EN · RU · TK',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(height: 1.5),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -201,6 +293,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _confirmDelete(
+      BuildContext context, RecognitionProvider provider, int index) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Key\'i Sil'),
+        content: const Text('Bu key\'i silmek istiyor musun?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () async {
+              await provider.removeApiKey(index);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _maskKey(String key) {
+    if (key.length <= 12) return '***';
+    return '${key.substring(0, 8)}...${key.substring(key.length - 4)}';
   }
 }
 
