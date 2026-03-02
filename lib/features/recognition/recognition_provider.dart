@@ -95,25 +95,82 @@ class RecognitionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _buildPrompt() {
-    final langName = switch (_language) {
-      RecognitionLanguage.english => 'English',
-      RecognitionLanguage.russian => 'Russian',
-      RecognitionLanguage.turkmen => 'Turkmen',
-    };
-    return '''You are an expert handwriting recognition system.
-Extract ALL handwritten text from this image exactly as written.
+ String _buildPrompt() {
+  switch (_language) {
+    case RecognitionLanguage.turkmen:
+      return '''You are an expert in Turkmen language handwriting recognition.
+
+CRITICAL: The text in this image is written in TURKMEN LANGUAGE (Türkmen dili).
+- This is NOT Turkish, NOT Uzbek, NOT Azerbaijani, NOT any other language.
+- This is specifically TURKMEN written in the LATIN script.
+
+Turkmen Latin alphabet (all possible letters):
+A, B, Ç, D, E, Ä, F, G, H, I, J, Ž, K, L, M, N, Ň, O, Ö, P, R, S, Ş, T, U, Ü, W, Y, Ý, Z
+(lowercase: a, b, ç, d, e, ä, f, g, h, i, j, ž, k, l, m, n, ň, o, ö, p, r, s, ş, t, u, ü, w, y, ý, z)
+
+Key Turkmen-specific characters to watch for:
+- Ä/ä (not A/a) — open front vowel
+- Ň/ň (not N/n) — nasal sound
+- Ö/ö (not O/o) — front rounded vowel  
+- Ş/ş (not S/s) — like English "sh"
+- Ü/ü (not U/u) — front rounded vowel
+- W/w (not V/v) — Turkmen uses W not V
+- Ý/ý (not Y/y) — used in specific positions
+- Ž/ž (not Z/z) — like French "j"
+- Ç/ç (not C/c) — like English "ch"
+
+Common Turkmen words for reference: 
+salam, türkmen, döwlet, mekdep, okuw, kitap, adam, aýal, çaga
 
 Rules:
-1. Output ONLY the recognized text — no explanations, no comments.
-2. Preserve line breaks as they appear in the image.
-3. The text is written in $langName. Use this to resolve ambiguous characters.
-4. Include numbers, punctuation, and special characters as-is.
-5. If you cannot read a word clearly, make your best guess based on context.
-6. If there is NO text in the image, output only: [no text found]
+1. Output ONLY the recognized Turkmen text — no explanations.
+2. Preserve line breaks exactly as in the image.
+3. Never substitute Turkmen letters with similar-looking letters from other languages.
+4. If unsure between two letters, choose the one that makes sense in Turkmen.
+5. If NO text visible: output [no text found]
 
-Output the recognized text now:''';
+Output the Turkmen text now:''';
+
+    case RecognitionLanguage.russian:
+      return '''You are an expert in Russian language handwriting recognition.
+
+CRITICAL: The text in this image is written in RUSSIAN LANGUAGE using the CYRILLIC script.
+- This is NOT Bulgarian, NOT Ukrainian, NOT Serbian — this is specifically RUSSIAN.
+- Do NOT convert Cyrillic to Latin characters under any circumstances.
+
+Russian Cyrillic alphabet:
+А, Б, В, Г, Д, Е, Ё, Ж, З, И, Й, К, Л, М, Н, О, П, Р, С, Т, У, Ф, Х, Ц, Ч, Ш, Щ, Ъ, Ы, Ь, Э, Ю, Я
+
+Common handwriting confusions to watch for:
+- Т/т can look like Latin "T/t" — always use Cyrillic
+- Р/р can look like Latin "P/p" — always use Cyrillic  
+- С/с can look like Latin "C/c" — always use Cyrillic
+- Н/н can look like Latin "H/h" — always use Cyrillic
+- В/в can look like Latin "B/b" — always use Cyrillic
+
+Rules:
+1. Output ONLY the recognized Russian text in Cyrillic — no explanations.
+2. Preserve line breaks exactly as in the image.
+3. Never mix Latin and Cyrillic characters.
+4. If NO text visible: output [no text found]
+
+Output the Russian text now:''';
+
+    case RecognitionLanguage.english:
+      return '''You are an expert handwriting recognition system.
+
+The text in this image is written in ENGLISH.
+
+Rules:
+1. Output ONLY the recognized English text — no explanations, no comments.
+2. Preserve line breaks exactly as in the image.
+3. Include numbers, punctuation, and special characters as-is.
+4. If you cannot read a word clearly, make your best guess based on context.
+5. If NO text visible: output [no text found]
+
+Output the English text now:''';
   }
+}
 
   Future<void> pickImage(ImageSource source) async {
     try {
