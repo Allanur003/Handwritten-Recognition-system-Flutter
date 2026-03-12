@@ -123,9 +123,17 @@ class AppLocalizations {
     },
   };
 
-  String get(String key) {
-    return _strings[locale.languageCode]?[key] ?? _strings['en']![key] ?? key;
+String get(String key) {
+  if (_strings[locale.languageCode]?.containsKey(key) ?? false) {
+    return _strings[locale.languageCode]![key]!;
   }
+
+  if (_strings['en']!.containsKey(key)) {
+    return _strings['en']![key]!;
+  }
+
+  return key;
+}
 }
 
 class AppLocalizationsDelegate
