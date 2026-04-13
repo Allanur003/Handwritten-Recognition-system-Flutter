@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 import 'package:handwritten_recognition/core/localization/app_localizations.dart';
 import 'package:handwritten_recognition/features/recognition/recognition_provider.dart';
@@ -22,8 +21,6 @@ class _SignatureScreenState extends State<SignatureScreen> {
   SignatureState _signatureState = SignatureState.idle;
   String _errorMessage = '';
   final ImagePicker _picker = ImagePicker();
-
-  static const String _ownerName = 'Hudaýgulyýew Şirli';
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -48,9 +45,48 @@ class _SignatureScreenState extends State<SignatureScreen> {
     }
   }
 
+  Future<void> _pickReferenceSignature(ImageSource source) async {
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: source,
+        imageQuality: 100,
+        maxWidth: 2048,
+        maxHeight: 2048,
+      );
+      if (file != null && mounted) {
+        final recProvider = context.read<RecognitionProvider>();
+        await recProvider.saveReferenceSignature(File(file.path));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).get('refSigSaved')),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Model fallback ile imza doğrula:
+  /// gemini-2.0-flash → gemini-1.5-flash → gemini-2.5-flash
+  /// 503 (server busy) veya 404 (model not found) hatalarında sonraki modele geç.
   Future<void> _verifySignature() async {
     if (_selectedImage == null) return;
     final recProvider = context.read<RecognitionProvider>();
+
     if (!recProvider.hasApiKey) {
       setState(() {
         _errorMessage = 'API_KEY_MISSING';
@@ -59,66 +95,70 @@ class _SignatureScreenState extends State<SignatureScreen> {
       return;
     }
 
-    setState(() => _signatureState = SignatureState.processing);
-
-    try {
-      final apiKey = recProvider.apiKeys[recProvider.currentKeyIndex];
-      final model = GenerativeModel(
-        model: 'gemini-2.5-flash',
-        apiKey: apiKey,
-      );
-
-      final imageBytes = await _selectedImage!.readAsBytes();
-      final ext = _selectedImage!.path.split('.').last.toLowerCase();
-      final mimeType = (ext == 'png') ? 'image/png' : 'image/jpeg';
-
-      const prompt = '''You are a signature verification expert.
-
-Your task: Determine if the image contains a valid personal signature that could belong to a person named "Hudaýgulyýew Sirli" (a Turkmen name).
-
-Analyze:
-1. Is there a signature or handwriting visible in the image?
-2. Does it look like a genuine personal signature (cursive, flowing strokes, personal style)?
-3. Are there initials or stylized forms that could represent "H" and "S" (Hudaýgulyýew Sirli)?
-
-A signature MATCHES if:
-- There is clear handwriting or signature strokes visible
-- It has characteristics of a personal signature (not printed text)
-- It contains flowing strokes that could represent this person's signature
-
-It does NOT MATCH if:
-- The image is blank or has no writing
-- The writing is clearly printed/typed text (not a signature)
-- The writing clearly shows a completely different name in plain text
-
-Respond with ONLY one word:
-- "MATCH" if it looks like a valid personal signature for this person
-- "NO_MATCH" if no signature is visible or it clearly belongs to someone else
-
-Your answer:''';
-
-      final response = await model.generateContent([
-        Content.multi([
-          DataPart(mimeType, imageBytes),
-          TextPart(prompt),
-        ])
-      ]);
-
-      final result = (response.text ?? '').trim().toUpperCase();
-
+    if (!recProvider.hasReferenceSignature) {
       setState(() {
-        if (result.contains('MATCH') && !result.contains('NO_MATCH')) {
-          _signatureState = SignatureState.matched;
-        } else {
-          _signatureState = SignatureState.noMatch;
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = 'NO_REFERENCE';
         _signatureState = SignatureState.error;
       });
+      return;
     }
+
+    setState(() => _signatureState = SignatureState.processing);
+
+    final models = recProvider.signatureModels;
+
+    for (int keyAttempt = 0; keyAttempt < recProvider.apiKeys.length; keyAttempt++) {
+      final apiKey = recProvider.apiKeys[recProvider.currentKeyIndex];
+
+      for (final modelName in models) {
+        try {
+          final result = await recProvider.callSignatureApi(
+            apiKey,
+            modelName,
+            _selectedImage!,
+          );
+
+          if (!mounted) return;
+
+          setState(() {
+            if (result.contains('MATCH') && !result.contains('NO_MATCH')) {
+              _signatureState = SignatureState.matched;
+            } else {
+              _signatureState = SignatureState.noMatch;
+            }
+          });
+          return;
+
+        } catch (e) {
+          final msg = e.toString().toLowerCase();
+          final isModelError = msg.contains('404') || msg.contains('not found');
+          final isUnavailable =
+              msg.contains('503') || msg.contains('unavailable') || msg.contains('overloaded');
+          final isRateLimit =
+              msg.contains('429') || msg.contains('quota') || msg.contains('resource exhausted');
+
+          // Model yok veya sunucu meşgul → sonraki modeli dene
+          if (isModelError || isUnavailable) continue;
+
+          // Rate limit → sonraki key'e geç (iç döngüyü kır)
+          if (isRateLimit) break;
+
+          // Başka hata → ekrana yansıt
+          if (!mounted) return;
+          setState(() {
+            _errorMessage = e.toString();
+            _signatureState = SignatureState.error;
+          });
+          return;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _errorMessage = 'all_keys_exhausted';
+      _signatureState = SignatureState.error;
+    });
   }
 
   void _reset() {
@@ -129,23 +169,75 @@ Your answer:''';
     });
   }
 
+  void _showRefPickerDialog() {
+    final loc = AppLocalizations.of(context);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                loc.get('refSigUploadTitle'),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.photo_library)),
+                title: Text(loc.get('pickImage')),
+                subtitle: Text(loc.get('refSigFromGallery')),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickReferenceSignature(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.camera_alt)),
+                title: Text(loc.get('takePhoto')),
+                subtitle: Text(loc.get('refSigFromCamera')),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickReferenceSignature(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final recProvider = context.watch<RecognitionProvider>();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.get('signatureTitle'),
             style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Reference card
+            // ── Referans İmza Kartı ────────────────────────────────────────
             Card(
               color: theme.colorScheme.primaryContainer.withOpacity(0.4),
               child: Padding(
@@ -158,11 +250,28 @@ Your answer:''';
                         Icon(Icons.draw_rounded,
                             color: theme.colorScheme.primary, size: 20),
                         const SizedBox(width: 8),
-                        Text(
-                          loc.get('signatureReferenceLabel'),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                        Expanded(
+                          child: Text(
+                            loc.get('signatureReferenceLabel'),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _showRefPickerDialog,
+                          icon: Icon(
+                            recProvider.hasReferenceSignature
+                                ? Icons.swap_horiz
+                                : Icons.upload_file,
+                            size: 18,
+                          ),
+                          label: Text(
+                            recProvider.hasReferenceSignature
+                                ? loc.get('refSigChange')
+                                : loc.get('refSigUpload'),
+                            style: const TextStyle(fontSize: 12),
                           ),
                         ),
                       ],
@@ -170,7 +279,7 @@ Your answer:''';
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
-                      height: 100,
+                      height: 120,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -178,31 +287,89 @@ Your answer:''';
                             color:
                                 theme.colorScheme.outline.withOpacity(0.3)),
                       ),
-                      child: Center(
-                        child: CustomPaint(
-                          size: const Size(280, 80),
-                          painter: _SignaturePainter(),
-                        ),
-                      ),
+                      child: recProvider.hasReferenceSignature
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(11),
+                              child: Image.file(
+                                recProvider.referenceSignature!,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                              ),
+                            )
+                          : InkWell(
+                              onTap: _showRefPickerDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_photo_alternate_outlined,
+                                      size: 40,
+                                      color: theme.colorScheme.outline),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    loc.get('refSigTapToUpload'),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.outline,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        _ownerName,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontStyle: FontStyle.italic,
-                          color:
-                              theme.colorScheme.onSurface.withOpacity(0.65),
-                        ),
+                    if (recProvider.hasReferenceSignature) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle,
+                              size: 14, color: Colors.green.shade700),
+                          const SizedBox(width: 4),
+                          Text(
+                            loc.get('refSigStored'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Upload area
+            // ── Referans yoksa uyarı ───────────────────────────────────────
+            if (!recProvider.hasReferenceSignature)
+              Card(
+                color: theme.colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          color: theme.colorScheme.onErrorContainer),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          loc.get('refSigMissing'),
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn().slideY(begin: -0.2),
+
+            if (!recProvider.hasReferenceSignature) const SizedBox(height: 16),
+
+            // ── Test İmza Yükleme ──────────────────────────────────────────
             GestureDetector(
               onTap: () => _pickImage(ImageSource.gallery),
               child: AnimatedContainer(
@@ -216,7 +383,8 @@ Your answer:''';
                         : theme.colorScheme.outline.withOpacity(0.4),
                     width: 2,
                   ),
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withOpacity(0.3),
                 ),
                 child: _selectedImage != null
                     ? ClipRRect(
@@ -245,7 +413,7 @@ Your answer:''';
             ),
             const SizedBox(height: 12),
 
-            // Buttons row
+            // Butonlar
             Row(
               children: [
                 Expanded(
@@ -271,7 +439,7 @@ Your answer:''';
             ),
             const SizedBox(height: 12),
 
-            // Verify button
+            // Doğrula butonu
             if (_selectedImage != null) ...[
               FilledButton.icon(
                 style: FilledButton.styleFrom(
@@ -308,7 +476,7 @@ Your answer:''';
 
             const SizedBox(height: 8),
 
-            // Result cards
+            // ── Sonuç Kartları ─────────────────────────────────────────────
             if (_signatureState == SignatureState.matched)
               Card(
                 color: Colors.green.withOpacity(0.15),
@@ -374,28 +542,7 @@ Your answer:''';
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
 
             if (_signatureState == SignatureState.error)
-              Card(
-                color: theme.colorScheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline,
-                          color: theme.colorScheme.onErrorContainer),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage == 'API_KEY_MISSING'
-                              ? loc.get('apiKeyMissing')
-                              : _errorMessage,
-                          style: TextStyle(
-                              color: theme.colorScheme.onErrorContainer),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildErrorCard(theme, loc),
 
             const SizedBox(height: 16),
 
@@ -422,75 +569,41 @@ Your answer:''';
       ),
     );
   }
-}
 
-class _SignaturePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1A237E)
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
+  Widget _buildErrorCard(ThemeData theme, AppLocalizations loc) {
+    String displayMsg;
+    if (_errorMessage == 'API_KEY_MISSING') {
+      displayMsg = loc.get('apiKeyMissing');
+    } else if (_errorMessage == 'NO_REFERENCE') {
+      displayMsg = loc.get('refSigMissing');
+    } else if (_errorMessage == 'all_keys_exhausted') {
+      displayMsg = loc.get('allKeysExhausted');
+    } else if (_errorMessage.contains('503') ||
+        _errorMessage.toLowerCase().contains('unavailable')) {
+      displayMsg = loc.get('serverBusy');
+    } else {
+      displayMsg = _errorMessage;
+    }
 
-    final path = Path();
-    final w = size.width;
-    final h = size.height;
-
-    // Stylized H
-    path.moveTo(w * 0.02, h * 0.75);
-    path.cubicTo(w * 0.02, h * 0.2, w * 0.06, h * 0.15, w * 0.06, h * 0.75);
-    path.moveTo(w * 0.02, h * 0.45);
-    path.cubicTo(w * 0.04, h * 0.42, w * 0.07, h * 0.42, w * 0.09, h * 0.45);
-    path.moveTo(w * 0.09, h * 0.2);
-    path.lineTo(w * 0.09, h * 0.75);
-
-    // "udaý" flowing
-    path.moveTo(w * 0.09, h * 0.75);
-    path.cubicTo(w * 0.12, h * 0.6, w * 0.14, h * 0.35, w * 0.16, h * 0.5);
-    path.cubicTo(w * 0.18, h * 0.65, w * 0.18, h * 0.75, w * 0.20, h * 0.75);
-    path.cubicTo(w * 0.23, h * 0.6, w * 0.26, h * 0.35, w * 0.28, h * 0.45);
-    path.cubicTo(w * 0.30, h * 0.6, w * 0.29, h * 0.8, w * 0.27, h * 0.90);
-    path.cubicTo(w * 0.25, h * 0.95, w * 0.22, h * 0.92, w * 0.23, h * 0.85);
-
-    // "ulyý"
-    path.moveTo(w * 0.30, h * 0.55);
-    path.cubicTo(w * 0.33, h * 0.4, w * 0.36, h * 0.38, w * 0.38, h * 0.5);
-    path.cubicTo(w * 0.40, h * 0.65, w * 0.40, h * 0.78, w * 0.42, h * 0.75);
-    path.cubicTo(w * 0.45, h * 0.6, w * 0.47, h * 0.4, w * 0.49, h * 0.55);
-    path.cubicTo(w * 0.51, h * 0.7, w * 0.51, h * 0.78, w * 0.53, h * 0.75);
-    path.cubicTo(w * 0.56, h * 0.72, w * 0.58, h * 0.70, w * 0.60, h * 0.72);
-
-    // "Ş"
-    path.moveTo(w * 0.60, h * 0.35);
-    path.cubicTo(w * 0.58, h * 0.28, w * 0.64, h * 0.25, w * 0.67, h * 0.32);
-    path.cubicTo(w * 0.70, h * 0.38, w * 0.68, h * 0.45, w * 0.64, h * 0.48);
-    path.cubicTo(w * 0.60, h * 0.52, w * 0.59, h * 0.60, w * 0.62, h * 0.65);
-    path.cubicTo(w * 0.65, h * 0.70, w * 0.70, h * 0.68, w * 0.71, h * 0.63);
-
-    // "irli"
-    path.moveTo(w * 0.71, h * 0.45);
-    path.cubicTo(w * 0.74, h * 0.38, w * 0.76, h * 0.40, w * 0.76, h * 0.50);
-    path.cubicTo(w * 0.76, h * 0.65, w * 0.75, h * 0.75, w * 0.77, h * 0.72);
-    path.cubicTo(w * 0.80, h * 0.62, w * 0.82, h * 0.55, w * 0.84, h * 0.65);
-    path.cubicTo(w * 0.86, h * 0.75, w * 0.87, h * 0.78, w * 0.89, h * 0.72);
-
-    // Underline flourish
-    path.moveTo(w * 0.02, h * 0.88);
-    path.cubicTo(w * 0.20, h * 0.85, w * 0.55, h * 0.82, w * 0.92, h * 0.85);
-    path.cubicTo(w * 0.95, h * 0.86, w * 0.97, h * 0.87, w * 0.98, h * 0.88);
-
-    canvas.drawPath(path, paint);
-
-    // Dots
-    final dotPaint = Paint()
-      ..color = const Color(0xFF1A237E)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(w * 0.76, h * 0.27), 2.5, dotPaint);
-    canvas.drawCircle(Offset(w * 0.84, h * 0.27), 2.5, dotPaint);
+    return Card(
+      color: theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline,
+                color: theme.colorScheme.onErrorContainer),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                displayMsg,
+                style:
+                    TextStyle(color: theme.colorScheme.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
