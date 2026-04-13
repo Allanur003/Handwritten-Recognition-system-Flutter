@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:handwritten_recognition/core/localization/app_localizations.dart';
 
@@ -55,12 +56,32 @@ class ResultCardWidget extends StatelessWidget {
             ),
             const Divider(),
             const SizedBox(height: 4),
-            if (hasText)
+            if (hasText) ...[
               SelectableText(
                 text,
                 style: theme.textTheme.bodyLarge?.copyWith(height: 1.7),
-              )
-            else
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: text));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(loc.get('copied')),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ));
+                  },
+                  icon: const Icon(Icons.select_all_rounded),
+                  label: Text(loc.get('copyAll')),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    foregroundColor: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ] else
               Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20),

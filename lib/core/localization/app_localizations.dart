@@ -27,6 +27,7 @@ class AppLocalizations {
       'recognize': 'Recognize Text',
       'result': 'Recognized Text',
       'copy': 'Copy',
+      'copyAll': 'Copy All',
       'share': 'Share',
       'copied': 'Copied!',
       'noText': 'No text found. Try a clearer image.',
@@ -51,7 +52,30 @@ class AppLocalizations {
       'apiKeySave': 'Save',
       'apiKeyTitle': 'Gemini API Key',
       'apiKeyInfo': 'Get your free key from aistudio.google.com',
-      
+      'signatureTitle': 'Signature Recognition',
+      'signatureTab': 'Signature',
+      'textTab': 'Text',
+      'signatureInstruction': 'Upload a photo of your signature',
+      'signatureVerify': 'Verify Signature',
+      'signatureMatch': 'Signature Verified ✓',
+      'signatureMatchMsg': 'Hudaýgulyýew Şirli',
+      'signatureNoMatch': 'Signature Not Recognized',
+      'signatureNoMatchMsg': 'This signature does not match or is unreadable. Please try a clearer photo.',
+      'signatureAnalyzing': 'Analyzing signature...',
+      'signatureHint': 'Place your signature clearly on white paper',
+      'signatureReferenceLabel': 'Reference Signature',
+      'appearance': 'Appearance',
+      'about': 'About',
+      'keyDelete': 'Delete Key',
+      'keyDeleteConfirm': 'Are you sure you want to delete this key?',
+      'cancel': 'Cancel',
+      'delete': 'Delete',
+      'keyActive': 'Active',
+      'keyWaiting': 'Waiting',
+      'keyAddFirst': 'Add API Key (1/2)',
+      'keyAddSecond': 'Add Second API Key (2/2)',
+      'keyBothAdded': 'Both keys added. You can recognize up to 40 images per day.',
+      'keyInfoTip': 'You can add up to 2 keys. If one is exhausted, it switches to the other automatically.',
     },
     'ru': {
       'appTitle': 'Распознавание почерка',
@@ -61,6 +85,7 @@ class AppLocalizations {
       'recognize': 'Распознать',
       'result': 'Распознанный текст',
       'copy': 'Копировать',
+      'copyAll': 'Копировать всё',
       'share': 'Поделиться',
       'copied': 'Скопировано!',
       'noText': 'Текст не найден. Попробуйте более чёткое фото.',
@@ -85,7 +110,30 @@ class AppLocalizations {
       'apiKeySave': 'Сохранить',
       'apiKeyTitle': 'Gemini API Ключ',
       'apiKeyInfo': 'Бесплатный ключ: aistudio.google.com',
-      
+      'signatureTitle': 'Распознавание подписи',
+      'signatureTab': 'Подпись',
+      'textTab': 'Текст',
+      'signatureInstruction': 'Загрузите фото вашей подписи',
+      'signatureVerify': 'Проверить подпись',
+      'signatureMatch': 'Подпись подтверждена ✓',
+      'signatureMatchMsg': 'Hudaýgulyýew Şirli',
+      'signatureNoMatch': 'Подпись не распознана',
+      'signatureNoMatchMsg': 'Эта подпись не совпадает или нечёткая. Попробуйте более чёткое фото.',
+      'signatureAnalyzing': 'Анализ подписи...',
+      'signatureHint': 'Положите подпись на белую бумагу чётко',
+      'signatureReferenceLabel': 'Эталонная подпись',
+      'appearance': 'Внешний вид',
+      'about': 'О приложении',
+      'keyDelete': 'Удалить ключ',
+      'keyDeleteConfirm': 'Вы уверены, что хотите удалить этот ключ?',
+      'cancel': 'Отмена',
+      'delete': 'Удалить',
+      'keyActive': '✅ Активен',
+      'keyWaiting': '⏳ Ожидает',
+      'keyAddFirst': 'Добавить API ключ (1/2)',
+      'keyAddSecond': 'Добавить второй API ключ (2/2)',
+      'keyBothAdded': 'Оба ключа добавлены. Можно распознавать до 40 изображений в день.',
+      'keyInfoTip': 'Можно добавить до 2 ключей. Если один исчерпан, автоматически переключится на другой.',
     },
     'tk': {
       'appTitle': 'El ýazgy tanamak',
@@ -95,6 +143,7 @@ class AppLocalizations {
       'recognize': 'Teksti tanama',
       'result': 'Tanalanan tekst',
       'copy': 'Göçür',
+      'copyAll': 'Hemmesini göçür',
       'share': 'Paýlaş',
       'copied': 'Göçürildi!',
       'noText': 'Tekst tapylmady. Has aýdyň surat synap görüň.',
@@ -119,21 +168,42 @@ class AppLocalizations {
       'apiKeySave': 'Sakla',
       'apiKeyTitle': 'Gemini API Açary',
       'apiKeyInfo': 'Mugt açar: aistudio.google.com',
-      
+      'signatureTitle': 'Gol tanamak',
+      'signatureTab': 'Gol',
+      'textTab': 'Tekst',
+      'signatureInstruction': 'Golyňyzyň suratyny ýükläň',
+      'signatureVerify': 'Goly barla',
+      'signatureMatch': 'Gol tassyklandy ✓',
+      'signatureMatchMsg': 'Hudaýgulyýew Şirli',
+      'signatureNoMatch': 'Gol tanalmady',
+      'signatureNoMatchMsg': 'Bu gol gabat gelmeýär ýa-da okalmaýar. Has aýdyň surat synap görüň.',
+      'signatureAnalyzing': 'Gol derňelýär...',
+      'signatureHint': 'Golyňyzy ak kagyzda aýdyň çekiň',
+      'signatureReferenceLabel': 'Nusgalyk gol',
+      'appearance': 'Görnüş',
+      'about': 'Programma barada',
+      'keyDelete': 'Açary poz',
+      'keyDeleteConfirm': 'Bu açary pozmak isleýärsiňizmi?',
+      'cancel': 'Goýbolsun',
+      'delete': 'Poz',
+      'keyActive': '✅ Işjeň',
+      'keyWaiting': '⏳ Garaşýar',
+      'keyAddFirst': 'API açary goş (1/2)',
+      'keyAddSecond': 'Ikinji API açary goş (2/2)',
+      'keyBothAdded': 'Iki açar hem goşuldy. Günde jemi 40 surat tanadyp bilersiň.',
+      'keyInfoTip': 'Iň köp 2 açar goşup bilersiň. Biri dolsa awtomatik beýlekisine geçer.',
     },
   };
 
-String get(String key) {
-  if (_strings[locale.languageCode]?.containsKey(key) ?? false) {
-    return _strings[locale.languageCode]![key]!;
+  String get(String key) {
+    if (_strings[locale.languageCode]?.containsKey(key) ?? false) {
+      return _strings[locale.languageCode]![key]!;
+    }
+    if (_strings['en']!.containsKey(key)) {
+      return _strings['en']![key]!;
+    }
+    return key;
   }
-
-  if (_strings['en']!.containsKey(key)) {
-    return _strings['en']![key]!;
-  }
-
-  return key;
-}
 }
 
 class AppLocalizationsDelegate

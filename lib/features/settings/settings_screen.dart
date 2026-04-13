@@ -48,7 +48,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ── API Keys ─────────────────────────────────────
           _SectionHeader(title: loc.get('apiKeyTitle')),
 
-          // Bilgi kartı
           Card(
             color: theme.colorScheme.secondaryContainer,
             child: Padding(
@@ -73,8 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '💡 In kop 2 key gosup bilersin. '
-                    'Biri dolsa automat beylekisine geçer.',
+                    loc.get('keyInfoTip'),
                     style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSecondaryContainer,
                         fontStyle: FontStyle.italic),
@@ -85,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Mevcut key'ler
+          // Existing keys
           ...recProvider.apiKeys.asMap().entries.map((entry) {
             final index = entry.key;
             final key = entry.value;
@@ -114,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ?.copyWith(fontFamily: 'monospace'),
                 ),
                 subtitle: Text(
-                  isActive ? '✅ Aktiw' : '⏳ Garasyn',
+                  isActive ? loc.get('keyActive') : loc.get('keyWaiting'),
                   style: TextStyle(
                     color: isActive ? Colors.green : theme.colorScheme.outline,
                     fontWeight:
@@ -125,13 +123,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: IconButton(
                   icon: Icon(Icons.delete_outline,
                       color: theme.colorScheme.error),
-                  onPressed: () => _confirmDelete(context, recProvider, index),
+                  onPressed: () => _confirmDelete(context, recProvider, index, loc),
                 ),
               ),
             );
           }),
 
-          // Yeni key ekleme — sadece 2'den az key varsa göster
+          // Add new key
           if (recProvider.canAddMoreKeys) ...[
             const SizedBox(height: 4),
             Card(
@@ -142,8 +140,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       recProvider.apiKeys.isEmpty
-                          ? 'API Key Gosh (1/2)'
-                          : 'İkinji API Key gosh (2/2)',
+                          ? loc.get('keyAddFirst')
+                          : loc.get('keyAddSecond'),
                       style: theme.textTheme.titleSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -177,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                    '✅ Key ${recProvider.apiKeys.length} db edildi!'),
+                                    '✅ Key ${recProvider.apiKeys.length} ${loc.get('apiKeySave')}!'),
                                 behavior: SnackBarBehavior.floating,
                                 backgroundColor: Colors.green,
                                 duration: const Duration(seconds: 2),
@@ -194,7 +192,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ] else ...[
-            // 2 key doldu mesajı
             const SizedBox(height: 4),
             Card(
               color: theme.colorScheme.tertiaryContainer,
@@ -202,13 +199,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle,
+                    const Icon(Icons.check_circle,
                         color: Colors.green, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                      'İki key hem gosuldy. Günde jemi 40 surat tanadyp bilersin.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Text(
+                        loc.get('keyBothAdded'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -219,7 +218,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
 
           // ── Appearance ───────────────────────────────────
-          _SectionHeader(title: 'Appearance'),
+          _SectionHeader(title: loc.get('appearance')),
           Card(
             child: SwitchListTile(
               secondary: Icon(
@@ -259,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
 
           // ── About ────────────────────────────────────────
-          _SectionHeader(title: 'About'),
+          _SectionHeader(title: loc.get('about')),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -296,16 +295,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _confirmDelete(
-      BuildContext context, RecognitionProvider provider, int index) {
+      BuildContext context, RecognitionProvider provider, int index, AppLocalizations loc) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Key\'i Poz'),
-        content: const Text('Bu key\'i pozmak isleyarmin?'),
+        title: Text(loc.get('keyDelete')),
+        content: Text(loc.get('keyDeleteConfirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Goybolsun'),
+            child: Text(loc.get('cancel')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -314,7 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await provider.removeApiKey(index);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Poz'),
+            child: Text(loc.get('delete')),
           ),
         ],
       ),
