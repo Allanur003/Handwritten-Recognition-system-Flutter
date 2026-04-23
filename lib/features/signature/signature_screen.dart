@@ -74,26 +74,28 @@ class _SignatureScreenState extends State<SignatureScreen> {
 
       const prompt = '''You are a signature verification expert.
 
-Your task: Determine if the image contains a valid personal signature that could belong to a person named "Hudaýgulyýew Sirli" (a Turkmen name).
+Your task: Determine if the image contains a valid personal signature that matches this specific signature style:
 
-Analyze:
-1. Is there a signature or handwriting visible in the image?
-2. Does it look like a genuine personal signature (cursive, flowing strokes, personal style)?
-3. Are there initials or stylized forms that could represent "H" and "S" (Hudaýgulyýew Sirli)?
+The reference signature has these distinctive features:
+1. Starts with a large "H" — two tall parallel vertical strokes connected by a horizontal crossbar in the middle, with a small dot above the left stroke
+2. Followed by 3 flowing "u"-shaped humps (like "uuu") in cursive style going to the right
+3. Ends with a long descending tail that curves down and forms a closed loop/spiral at the bottom
 
 A signature MATCHES if:
-- There is clear handwriting or signature strokes visible
-- It has characteristics of a personal signature (not printed text)
-- It contains flowing strokes that could represent this person's signature
+- There is a large "H" shape at the start (two vertical lines with a crossbar)
+- Followed by wave/hump strokes in cursive
+- Has a long descending tail or loop at the end
+- Overall looks like a personal cursive signature with these structural elements
 
 It does NOT MATCH if:
 - The image is blank or has no writing
 - The writing is clearly printed/typed text (not a signature)
-- The writing clearly shows a completely different name in plain text
+- There is no recognizable "H" shape at the beginning
+- The signature style is completely different with no similar elements
 
 Respond with ONLY one word:
-- "MATCH" if it looks like a valid personal signature for this person
-- "NO_MATCH" if no signature is visible or it clearly belongs to someone else
+- "MATCH" if it looks like a valid personal signature matching this style
+- "NO_MATCH" if no matching signature is visible
 
 Your answer:''';
 
@@ -429,7 +431,7 @@ class _SignaturePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF1A237E)
-      ..strokeWidth = 2.5
+      ..strokeWidth = 2.2
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
@@ -438,57 +440,43 @@ class _SignaturePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Stylized H
-    path.moveTo(w * 0.02, h * 0.75);
-    path.cubicTo(w * 0.02, h * 0.2, w * 0.06, h * 0.15, w * 0.06, h * 0.75);
-    path.moveTo(w * 0.02, h * 0.45);
-    path.cubicTo(w * 0.04, h * 0.42, w * 0.07, h * 0.42, w * 0.09, h * 0.45);
-    path.moveTo(w * 0.09, h * 0.2);
-    path.lineTo(w * 0.09, h * 0.75);
+    // --- Big "H" ---
+    // Left vertical stroke of H (tall, slight curve at top)
+    path.moveTo(w * 0.08, h * 0.75);
+    path.cubicTo(w * 0.07, h * 0.55, w * 0.08, h * 0.30, w * 0.09, h * 0.18);
 
-    // "udaý" flowing
-    path.moveTo(w * 0.09, h * 0.75);
-    path.cubicTo(w * 0.12, h * 0.6, w * 0.14, h * 0.35, w * 0.16, h * 0.5);
-    path.cubicTo(w * 0.18, h * 0.65, w * 0.18, h * 0.75, w * 0.20, h * 0.75);
-    path.cubicTo(w * 0.23, h * 0.6, w * 0.26, h * 0.35, w * 0.28, h * 0.45);
-    path.cubicTo(w * 0.30, h * 0.6, w * 0.29, h * 0.8, w * 0.27, h * 0.90);
-    path.cubicTo(w * 0.25, h * 0.95, w * 0.22, h * 0.92, w * 0.23, h * 0.85);
+    // Right vertical stroke of H (parallel, same height)
+    path.moveTo(w * 0.20, h * 0.18);
+    path.cubicTo(w * 0.20, h * 0.30, w * 0.20, h * 0.55, w * 0.19, h * 0.75);
 
-    // "ulyý"
-    path.moveTo(w * 0.30, h * 0.55);
-    path.cubicTo(w * 0.33, h * 0.4, w * 0.36, h * 0.38, w * 0.38, h * 0.5);
-    path.cubicTo(w * 0.40, h * 0.65, w * 0.40, h * 0.78, w * 0.42, h * 0.75);
-    path.cubicTo(w * 0.45, h * 0.6, w * 0.47, h * 0.4, w * 0.49, h * 0.55);
-    path.cubicTo(w * 0.51, h * 0.7, w * 0.51, h * 0.78, w * 0.53, h * 0.75);
-    path.cubicTo(w * 0.56, h * 0.72, w * 0.58, h * 0.70, w * 0.60, h * 0.72);
+    // Horizontal crossbar of H (connecting at mid-height)
+    path.moveTo(w * 0.09, h * 0.47);
+    path.cubicTo(w * 0.12, h * 0.44, w * 0.17, h * 0.44, w * 0.20, h * 0.47);
 
-    // "Ş"
-    path.moveTo(w * 0.60, h * 0.35);
-    path.cubicTo(w * 0.58, h * 0.28, w * 0.64, h * 0.25, w * 0.67, h * 0.32);
-    path.cubicTo(w * 0.70, h * 0.38, w * 0.68, h * 0.45, w * 0.64, h * 0.48);
-    path.cubicTo(w * 0.60, h * 0.52, w * 0.59, h * 0.60, w * 0.62, h * 0.65);
-    path.cubicTo(w * 0.65, h * 0.70, w * 0.70, h * 0.68, w * 0.71, h * 0.63);
+    // --- "uuu" waves flowing right from H ---
+    // Three humps: each is a small arch going up then back down
+    path.moveTo(w * 0.20, h * 0.62);
 
-    // "irli"
-    path.moveTo(w * 0.71, h * 0.45);
-    path.cubicTo(w * 0.74, h * 0.38, w * 0.76, h * 0.40, w * 0.76, h * 0.50);
-    path.cubicTo(w * 0.76, h * 0.65, w * 0.75, h * 0.75, w * 0.77, h * 0.72);
-    path.cubicTo(w * 0.80, h * 0.62, w * 0.82, h * 0.55, w * 0.84, h * 0.65);
-    path.cubicTo(w * 0.86, h * 0.75, w * 0.87, h * 0.78, w * 0.89, h * 0.72);
+    // hump 1
+    path.cubicTo(w * 0.24, h * 0.38, w * 0.29, h * 0.38, w * 0.32, h * 0.62);
+    // hump 2
+    path.cubicTo(w * 0.36, h * 0.38, w * 0.41, h * 0.38, w * 0.44, h * 0.62);
+    // hump 3
+    path.cubicTo(w * 0.48, h * 0.38, w * 0.53, h * 0.38, w * 0.56, h * 0.62);
 
-    // Underline flourish
-    path.moveTo(w * 0.02, h * 0.88);
-    path.cubicTo(w * 0.20, h * 0.85, w * 0.55, h * 0.82, w * 0.92, h * 0.85);
-    path.cubicTo(w * 0.95, h * 0.86, w * 0.97, h * 0.87, w * 0.98, h * 0.88);
+    // --- Long descending tail with loop at bottom ---
+    // Flows down-right from the last hump, then curves into a loop
+    path.cubicTo(w * 0.60, h * 0.75, w * 0.65, h * 0.85, w * 0.68, h * 0.95);
+    path.cubicTo(w * 0.70, h * 1.05, w * 0.62, h * 1.08, w * 0.57, h * 1.00);
+    path.cubicTo(w * 0.52, h * 0.92, w * 0.56, h * 0.82, w * 0.62, h * 0.82);
 
     canvas.drawPath(path, paint);
 
-    // Dots
+    // Dot above the "H" (like a tittle — matches the dot visible in the image)
     final dotPaint = Paint()
       ..color = const Color(0xFF1A237E)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(w * 0.76, h * 0.27), 2.5, dotPaint);
-    canvas.drawCircle(Offset(w * 0.84, h * 0.27), 2.5, dotPaint);
+    canvas.drawCircle(Offset(w * 0.085, h * 0.10), 2.8, dotPaint);
   }
 
   @override
